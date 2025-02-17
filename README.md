@@ -7,6 +7,8 @@ Stock trading strategies play a critical role in investment. However, it is chal
 
 <img src=figs/stock_trading.png width="600">
 
+## Reference
+Hongyang Yang, Xiao-Yang Liu, Shan Zhong, and Anwar Walid. 2020. Deep Reinforcement Learning for Automated Stock Trading: An Ensemble Strategy. In ICAIF ’20: ACM International Conference on AI in Finance, Oct. 15–16, 2020, Manhattan, NY. ACM, New York, NY, USA.
 
 ## Installation:
 ```shell
