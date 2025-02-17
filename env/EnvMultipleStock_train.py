@@ -26,37 +26,41 @@ class StockEnvTrain(gym.Env):
     def __init__(self, df,day = 0):
         #super(StockEnv, self).__init__()
         #money = 10 , scope = 1
-        self.day = day
-        self.df = df
+        self.day = day  # 当前交易日的索引
+        self.df = df # 股票数据
 
         # action_space normalization and shape is STOCK_DIM
+        # 定义动作空间 (action_space)，每个股票可以执行买入（1）、卖出（-1）或保持（0）
         self.action_space = spaces.Box(low = -1, high = 1,shape = (STOCK_DIM,)) 
         # Shape = 181: [Current Balance]+[prices 1-30]+[owned shares 1-30] 
         # +[macd 1-30]+ [rsi 1-30] + [cci 1-30] + [adx 1-30]
+        # 定义观察空间 (observation_space)，这里包含了账户余额、股价、持有股票数、技术指标等
         self.observation_space = spaces.Box(low=0, high=np.inf, shape = (181,))
         # load data from a pandas dataframe
+        # 从数据框中获取当天的股票数据
         self.data = self.df.loc[self.day,:]
-        self.terminal = False             
+        self.terminal = False    # 判断是否结束交易         
         # initalize state
+        # 初始化状态 (state)，包括账户余额、股价、持有股票数、技术指标等
         self.state = [INITIAL_ACCOUNT_BALANCE] + \
                       self.data.adjcp.values.tolist() + \
                       [0]*STOCK_DIM + \
                       self.data.macd.values.tolist() + \
                       self.data.rsi.values.tolist() + \
                       self.data.cci.values.tolist() + \
-                      self.data.adx.values.tolist()
+                      self.data.adx.values.tolist() 
         # initialize reward
-        self.reward = 0
-        self.cost = 0
+        self.reward = 0 # 初始化奖励
+        self.cost = 0 # 初始化交易费用
         # memorize all the total balance change
-        self.asset_memory = [INITIAL_ACCOUNT_BALANCE]
-        self.rewards_memory = []
-        self.trades = 0
+        self.asset_memory = [INITIAL_ACCOUNT_BALANCE] # 初始化资产列表
+        self.rewards_memory = [] # 初始化奖励列表
+        self.trades = 0 # 初始化交易次数
         #self.reset()
-        self._seed()
+        self._seed() # 生成随机数种子
 
-
-    def _sell_stock(self, index, action):
+    # 根据动作执行卖出股票。卖出的量不能超过当前持有的股票数量，并且会根据交易费用调整账户余额和持仓
+    def _sell_stock(self, index, action): 
         # perform sell action based on the sign of the action
         if self.state[index+STOCK_DIM+1] > 0:
             #update balance
@@ -71,7 +75,7 @@ class StockEnvTrain(gym.Env):
         else:
             pass
 
-    
+    # 根据动作执行买入股票。买入的股票数量不能超过账户余额所允许购买的数量，并会扣除交易费用
     def _buy_stock(self, index, action):
         # perform buy action based on the sign of the action
         available_amount = self.state[0] // self.state[index+1]
@@ -86,7 +90,7 @@ class StockEnvTrain(gym.Env):
         self.cost+=self.state[index+1]*min(available_amount, action)* \
                           TRANSACTION_FEE_PERCENT
         self.trades+=1
-        
+    # 在每个时间步执行一个交易决策，并根据当前的状态和动作更新账户余额、股票持仓、技术指标等。返回的是下一个时间步的状态、奖励、是否结束交易等信息
     def step(self, actions):
         # print(self.day)
         self.terminal = self.day >= len(self.df.index.unique())-1
@@ -167,7 +171,7 @@ class StockEnvTrain(gym.Env):
 
 
         return self.state, self.reward, self.terminal, {}
-
+    # 重置环境，包括清空奖励、资产、交易次数等，并重新初始化状态
     def reset(self):
         self.asset_memory = [INITIAL_ACCOUNT_BALANCE]
         self.day = 0
@@ -186,7 +190,7 @@ class StockEnvTrain(gym.Env):
                       self.data.adx.values.tolist() 
         # iteration += 1 
         return self.state
-    
+    # 返回当前的状态，通常用于可视化
     def render(self, mode='human'):
         return self.state
 
